@@ -67,6 +67,10 @@ def calcular_ruta():
         # --- LÓGICA DE RUTA MEJORADA ---
         avoid_list = set(avoids_from_frontend)
         if travel_mode == 'motorcycle': avoid_list.add('Limited Access')
+        
+        # AÑADIR RESTRICCIÓN DE CARRETERAS SIN PAVIMENTAR
+        if 'unpaved' in avoids_from_frontend:
+            avoid_list.add('unpaved')
 
         params = {
             'key': CONFIG['MAPQUEST_KEY'], 'from': origen, 'to': destino,
@@ -102,13 +106,13 @@ def calcular_ruta():
             'time_minutes': round(final_time / 60, 1),
             'traffic_delay_minutes': round(traffic_delay_minutes),
             'toll_distance_km': round(route.get('tollRoadDistance', 0), 2),
-            'has_tolls': route.get('hasTollRoad', False), # <-- Clave para la coherencia de casetas
+            'has_tolls': route.get('hasTollRoad', False),
             'costs': costs,
             'shape': route['shape']['shapePoints'],
             'start_lat_lng': (route['locations'][0]['latLng']['lat'], route['locations'][0]['latLng']['lng']),
             'end_lat_lng': (route['locations'][1]['latLng']['lat'], route['locations'][1]['latLng']['lng']),
             'travel_mode': travel_mode,
-            'applied_avoids': list(avoid_list) # <-- Clave para la coherencia de restricciones
+            'applied_avoids': list(avoid_list)
         })
 
     except requests.exceptions.Timeout: return jsonify({'error': 'El servidor de rutas no respondió a tiempo.'}), 504

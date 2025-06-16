@@ -9,7 +9,9 @@ function initApp(apiKey) {
         resultadoDiv: document.getElementById('resultado'), modeOrigenBtn: document.getElementById('mode-origen'),
         modeDestinoBtn: document.getElementById('mode-destino'), travelModeButtons: document.querySelectorAll('.travel-mode-buttons button'),
         calculateBtn: document.getElementById('calculate-btn'), resetBtn: document.getElementById('reset-btn'),
-        avoidTollsCheck: document.getElementById('avoid-tolls'), avoidHighwaysCheck: document.getElementById('avoid-highways'),
+        avoidTollsCheck: document.getElementById('avoid-tolls'),
+        avoidHighwaysCheck: document.getElementById('avoid-highways'),
+        avoidUnpavedCheck: document.getElementById('avoid-unpaved'), // NUEVA REFERENCIA
     };
 
     // --- INICIALIZACIÓN ---
@@ -60,6 +62,7 @@ function initApp(apiKey) {
         const avoids = [];
         if (DOMElements.avoidTollsCheck.checked) avoids.push('toll road');
         if (DOMElements.avoidHighwaysCheck.checked) avoids.push('Limited Access');
+        if (DOMElements.avoidUnpavedCheck.checked) avoids.push('unpaved'); // AÑADIDO: ENVIAR RESTRICCIÓN DE NO PAVIMENTADO
 
         try {
             const response = await fetch('/ruta', {
@@ -77,7 +80,9 @@ function initApp(apiKey) {
     function resetApp() {
         DOMElements.origenInput.value = ''; DOMElements.destinoInput.value = '';
         DOMElements.resultadoDiv.innerHTML = ''; DOMElements.avoidTollsCheck.checked = false;
-        DOMElements.avoidHighwaysCheck.checked = false; clearRouteAndMarkers();
+        DOMElements.avoidHighwaysCheck.checked = false;
+        DOMElements.avoidUnpavedCheck.checked = false; // AÑADIDO: REINICIAR CHECKBOX
+        clearRouteAndMarkers();
         layers.tempMarkers.clearLayers(); map.setView([19.4326, -99.1332], 12);
     }
     
@@ -139,6 +144,10 @@ function initApp(apiKey) {
 
         if (applied_avoids.includes('Limited Access')) {
             summaryList += `<li><i class="fas fa-check-circle"></i>Se han <strong>evitado autopistas</strong>.</li>`;
+        }
+
+        if (applied_avoids.includes('unpaved')) { // AÑADIDO: MOSTRAR SI SE EVITARÁN NO PAVIMENTADAS
+            summaryList += `<li><i class="fas fa-check-circle"></i>Se han <strong>evitado carreteras sin pavimentar</strong>.</li>`;
         }
 
         return `<div class="options-summary"><h5>Opciones Aplicadas</h5><ul>${summaryList}</ul></div>`;
