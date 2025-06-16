@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Planificador de Rutas Inteligente</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://api.mqcdn.com/sdk/mapquest-js/v1.3.2/mapquest.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--primary-color:#4361ee;--secondary-color:#3f37c9;--accent-color:#4895ef;--danger-color:#f72585;--warning-color:#ffb703;--light-color:#f8f9fa;--dark-color:#212529;--gray-color:#6c757d;--border-radius:8px;--box-shadow:0 4px 12px rgba(0,0,0,0.1);--transition:all .3s ease}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body,html{height:100%;font-family:'Roboto',sans-serif;background-color:#f5f7fa}
+    #map{height:100%;width:100%}
+    #app-container{position:relative;height:100%;width:100%}
+    #sidebar{position:absolute;top:20px;left:20px;width:390px;background:white;border-radius:var(--border-radius);box-shadow:var(--box-shadow);z-index:1000;display:flex;flex-direction:column;max-height:calc(100vh - 40px)}
+    .sidebar-header{padding:18px 20px;background:var(--primary-color);color:white;flex-shrink:0}
+    .sidebar-header h3{font-weight:500;font-size:1.3rem}
+    .sidebar-content{padding:20px;overflow-y:auto;flex-grow:1}
+    .form-group{margin-bottom:15px}
+    .input-group{position:relative}
+    .input-group i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--gray-color)}
+    input[type="text"]{width:100%;padding:12px 15px 12px 38px;border:1px solid #e0e0e0;border-radius:var(--border-radius);font-size:.95rem;transition:var(--transition)}
+    input[type="text"]:focus{outline:none;border-color:var(--accent-color);box-shadow:0 0 0 3px rgba(67,97,238,.1)}
+    .mode-selector{display:flex;margin-bottom:15px;border-radius:var(--border-radius);overflow:hidden;background:#f0f2f5}
+    .mode-selector button{flex:1;padding:10px;background:transparent;color:var(--gray-color);border:none;cursor:pointer;font-size:.9rem;font-weight:500;transition:var(--transition);display:flex;align-items:center;justify-content:center;gap:6px}
+    .mode-selector button.active{background:var(--primary-color);color:white}
+    .travel-mode-buttons{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:15px}
+    .travel-mode-buttons button{padding:12px 5px;background:#f0f2f5;color:var(--gray-color);border:none;cursor:pointer;font-size:.85rem;transition:var(--transition);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-radius:var(--border-radius)}
+    .travel-mode-buttons button i{font-size:1.2rem}
+    .travel-mode-buttons button.active{background:var(--primary-color);color:white}
+    .action-buttons{display:grid;grid-template-columns:1fr auto;gap:10px}
+    .btn{padding:12px;border:none;border-radius:var(--border-radius);font-size:1rem;font-weight:500;cursor:pointer;transition:var(--transition);display:flex;align-items:center;justify-content:center;gap:8px}
+    .btn-primary{background:var(--primary-color);color:white}
+    .btn-primary:hover{background:var(--secondary-color)}
+    .btn-secondary{background:var(--gray-color);color:white}
+    .btn-secondary:hover{background:var(--dark-color)}
+    .options{background:#f8f9fa;padding:15px;border-radius:var(--border-radius);margin-bottom:20px}
+    .options-title{font-size:.9rem;font-weight:500;margin-bottom:12px}
+    .checkbox-group{display:flex;flex-direction:column;gap:10px}
+    .checkbox-item{display:flex;align-items:center;gap:10px;font-size:.9rem;cursor:pointer;user-select:none}
+    .checkbox-item input{cursor:pointer}
+    #resultado{margin-top:20px;font-size:.9rem}
+    .options-summary{background-color:#eef7ff;border-left:4px solid var(--accent-color);padding:12px;margin-bottom:20px;border-radius:var(--border-radius)}
+    .options-summary h5{margin:0 0 8px 0;font-size:1rem;color:var(--primary-color)}
+    .options-summary ul{list-style:none;padding:0;margin:0;font-size:.85rem}
+    .options-summary li{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+    .options-summary .fa-check-circle{color:var(--primary-color)}
+    .result-section{margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid #eee}
+    .result-section:last-child{border-bottom:none}
+    .result-section h4{color:var(--primary-color);margin-bottom:12px;font-size:1.1rem;font-weight:500}
+    .result-item{display:flex;justify-content:space-between;margin-bottom:8px;padding:4px 0}
+    .result-item.total{font-weight:bold;color:var(--primary-color);border-top:1px solid #eee;padding-top:10px;margin-top:5px;font-size:1rem}
+    .traffic-warning{display:flex;align-items:center;gap:8px;background-color:#fff3e0;color:#e65100;padding:8px;border-radius:var(--border-radius);font-size:.85rem;margin-top:5px}
+    .directions-list{list-style:none;padding:0}
+    .directions-list li{padding:8px 0;border-bottom:1px solid #f0f0f0;display:flex;align-items:flex-start;gap:10px}
+    .directions-list li span:first-child{color:var(--primary-color);font-weight:bold}
+    .result-footer{text-align:center;font-size:.8rem;color:var(--gray-color);margin-top:15px}
+    .error-message,.loading-message{padding:15px;border-radius:var(--border-radius);margin-bottom:15px;border-left:4px solid;display:flex;align-items:center;gap:10px}
+    .error-message{background-color:#fee;border-color:var(--danger-color);color:var(--danger-color)}
+    .loading-message{background-color:#eef7ff;border-color:var(--accent-color);color:var(--accent-color)}
+    .spinner{width:20px;height:20px;border:3px solid rgba(67,97,238,.2);border-top-color:var(--accent-color);border-radius:50%;animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div id="app-container">
+    <div id="map"></div>
+    <div id="sidebar">
+      <div class="sidebar-header"><h3><i class="fas fa-route"></i> Planificador de Rutas</h3></div>
+      <div class="sidebar-content">
+        <div class="mode-selector">
+          <button id="mode-origen" class="active"><i class="fas fa-map-marker-alt"></i> Origen</button>
+          <button id="mode-destino"><i class="fas fa-flag-checkered"></i> Destino</button>
+        </div>
+        <div class="form-group">
+          <div class="input-group"><i class="fas fa-search-location"></i><input type="text" id="origen" placeholder="Clic en mapa o ingresa dirección"></div>
+        </div>
+        <div class="form-group">
+          <div class="input-group"><i class="fas fa-search-location"></i><input type="text" id="destino" placeholder="Clic en mapa o ingresa dirección"></div>
+        </div>
+        <div class="travel-mode-buttons">
+          <button class="active" data-mode="car"><i class="fas fa-car"></i><span>Coche</span></button>
+          <button data-mode="motorcycle"><i class="fas fa-motorcycle"></i><span>Moto</span></button>
+          <button data-mode="pedestrian"><i class="fas fa-walking"></i><span>Caminar</span></button>
+        </div>
+        <div class="options">
+          <div class="options-title">Restricciones de Ruta</div>
+          <div class="checkbox-group">
+            <label class="checkbox-item"><input type="checkbox" id="avoid-tolls"> Evitar Casetas (Peaje)</label>
+            <label class="checkbox-item"><input type="checkbox" id="avoid-highways"> Evitar Autopistas</label>
+          </div>
+        </div>
+        <div class="action-buttons">
+          <button class="btn btn-primary" id="calculate-btn"><i class="fas fa-route"></i> Calcular</button>
+          <button class="btn btn-secondary" id="reset-btn" title="Limpiar todo"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="resultado"></div>
+      </div>
+    </div>
+  </div>
+  <script src="https://api.mqcdn.com/sdk/mapquest-js/v1.3.2/mapquest.js"></script>
+  <script src="/static/js/ main.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      try {
+        const apiKey = JSON.parse('{{ mapquest_key | tojson }}');
+        if (!apiKey) throw new Error("API Key no disponible.");
+        initApp(apiKey);
+      } catch (error) {
+        document.getElementById('map').innerHTML = `<div class="error-message" style="margin:20px;"><strong>Error Crítico:</strong> No se pudo cargar la aplicación.</div>`;
+      }
+    });
+  </script>
+</body>
+</html>
